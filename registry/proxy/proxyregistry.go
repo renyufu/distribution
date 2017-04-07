@@ -25,10 +25,17 @@ type proxyingRegistry struct {
 	scheduler      *scheduler.TTLExpirationScheduler
 	remoteURL      url.URL
 	authChallenger authChallenger
+	repositoryTTL  time.Duration
 }
 
 // NewRegistryPullThroughCache creates a registry acting as a pull through cache
 func NewRegistryPullThroughCache(ctx context.Context, registry distribution.Namespace, driver driver.StorageDriver, config configuration.Proxy) (distribution.Namespace, error) {
+	repositoryTTL := time.Duration(7 * 24 * time.Hour)
+	
+	if config.RepositoryTTL > 7 {
+		repositoryTTL = time.Duration(config.RepositoryTTL * 24 * time.Hour)
+	}
+	
 	remoteURL, err := url.Parse(config.RemoteURL)
 	if err != nil {
 		return nil, err
@@ -106,6 +113,7 @@ func NewRegistryPullThroughCache(ctx context.Context, registry distribution.Name
 			cm:        challenge.NewSimpleManager(),
 			cs:        cs,
 		},
+		repositoryTTL: repositoryTTL,
 	}, nil
 }
 
@@ -149,6 +157,7 @@ func (pr *proxyingRegistry) Repository(ctx context.Context, name reference.Named
 			scheduler:      pr.scheduler,
 			repositoryName: name,
 			authChallenger: pr.authChallenger,
+			repositoryTTL:  pr.repositoryTTL,
 		},
 		manifests: &proxyManifestStore{
 			repositoryName:  name,
@@ -157,6 +166,7 @@ func (pr *proxyingRegistry) Repository(ctx context.Context, name reference.Named
 			ctx:             ctx,
 			scheduler:       pr.scheduler,
 			authChallenger:  pr.authChallenger,
+			repositoryTTL:  pr.repositoryTTL,
 		},
 		name: name,
 		tags: &proxyTagService{
