@@ -14,15 +14,13 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-// todo(richardscothern): from cache control header or config file
-const blobTTL = time.Duration(24 * 7 * time.Hour)
-
 type proxyBlobStore struct {
 	localStore     distribution.BlobStore
 	remoteStore    distribution.BlobService
 	scheduler      *scheduler.TTLExpirationScheduler
 	repositoryName reference.Named
 	authChallenger authChallenger
+	repositoryTTL  time.Duration
 }
 
 var _ distribution.BlobStore = &proxyBlobStore{}
@@ -149,7 +147,7 @@ func (pbs *proxyBlobStore) ServeBlob(ctx context.Context, w http.ResponseWriter,
 			return
 		}
 
-		pbs.scheduler.AddBlob(blobRef, repositoryTTL)
+		pbs.scheduler.AddBlob(blobRef, pbs.repositoryTTL)
 	}(dgst)
 
 	_, err = pbs.copyContent(ctx, dgst, w)
