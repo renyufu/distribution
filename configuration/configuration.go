@@ -596,7 +596,7 @@ type Middleware struct {
 // Proxy configures the registry as a pull through cache
 type Proxy struct {
 	// RepositoryTTL is the expire days of the cached content in poroxy repository.
-	RepositoryTTL string `yaml:"repositoryttl"`
+	RepositoryTTL time.Duration `yaml:"repositoryttl"`
 	
 	// RemoteURL is the URL of the remote registry
 	RemoteURL string `yaml:"remoteurl"`
